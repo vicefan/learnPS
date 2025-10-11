@@ -10,19 +10,37 @@ Add-Type -AssemblyName PresentationFramework
 
 # XAML 로드 (외부 파일)
 $xamlPath = Join-Path -Path $PSScriptRoot -ChildPath "ui\MergePDF.xaml"
-# 파일을 원문으로 읽고 XML로 파싱 (인코딩 문제 방지)
-$xamlString = [System.IO.File]::ReadAllText($xamlPath)
-[xml]$xamlXml = $xamlString
-$reader = New-Object System.Xml.XmlNodeReader $xamlXml
-$window = [Windows.Markup.XamlReader]::Load($reader)
+if (-not (Test-Path $xamlPath)) {
+    Write-Host "XAML 파일을 찾을 수 없습니다: $xamlPath"
+    return
+}
+# 원문을 UTF8로 읽고 안전하게 XmlReader로 파싱
+$xamlString = [System.IO.File]::ReadAllText($xamlPath, [System.Text.Encoding]::UTF8)
+$sr = New-Object System.IO.StringReader($xamlString)
+$xmlReader = [System.Xml.XmlReader]::Create($sr)
+try {
+    $window = [Windows.Markup.XamlReader]::Load($xmlReader)
+} catch {
+    Write-Host "XAML 로드 실패: $_"
+    return
+} finally {
+    $xmlReader.Close()
+    $sr.Close()
+}
 
-# 창 위치
-$window.WindowStartupLocation = 'CenterScreen'
+if (-not $window) {
+    Write-Host "Window 객체 생성 실패"
+    return
+}
 
-# 컨트롤
+# 컨트롤 가져오기 (존재 여부 검사)
 $fileList = $window.FindName("FileList")
 $mergeBtn = $window.FindName("MergeButton")
 $deleteBtn = $window.FindName("DeleteButton")
+
+if (-not $fileList) { Write-Host "XAML에 FileList라는 Name을 가진 컨트롤이 없습니다."; return }
+if (-not $mergeBtn) { Write-Host "XAML에 MergeButton이라는 컨트롤이 없습니다."; return }
+if (-not $deleteBtn) { Write-Host "XAML에 DeleteButton이라는 컨트롤이 없습니다."; return }
 
 # --- 인덱스 갱신 함수 ---
 function Update-Indexes {
