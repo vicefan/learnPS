@@ -1,15 +1,3 @@
-# SettingModules.ps1 실행 (MergePDF\src -> 상위 두 단계: learnPS\SettingModules.ps1)
-$settingPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\SettingModules.ps1'
-if (Test-Path $settingPath) {
-    # 같은 스코프에서 실행 (함수/변수 공유 필요 시)
-    . $settingPath
-
-    # 또는 새 스코프에서 실행(필요시 주석 처리 후 사용)
-    # & $settingPath
-} else {
-    Write-Error "SettingModules.ps1 not found at $settingPath"
-}
-
 # PSWritePDF 모듈 확인 및 설치
 if (-not (Get-Module -ListAvailable -Name PSWritePDF)) {
     Write-Host "PSWritePDF module is not installed. Installing..." -ForegroundColor Yellow
