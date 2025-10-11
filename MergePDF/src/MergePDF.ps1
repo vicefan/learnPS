@@ -1,41 +1,31 @@
+# SettingModules.ps1 실행 (MergePDF\src -> 상위 두 단계: learnPS\SettingModules.ps1)
+$settingPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\SettingModules.ps1'
+if (Test-Path $settingPath) {
+    # 같은 스코프에서 실행 (함수/변수 공유 필요 시)
+    . $settingPath
+
+    # 또는 새 스코프에서 실행(필요시 주석 처리 후 사용)
+    # & $settingPath
+} else {
+    Write-Error "SettingModules.ps1 not found at $settingPath"
+}
+
+# PSWritePDF 모듈 확인 및 설치
+if (-not (Get-Module -ListAvailable -Name PSWritePDF)) {
+    Write-Host "PSWritePDF module is not installed. Installing..." -ForegroundColor Yellow
+    Install-Module -Name PSWritePDF -Scope CurrentUser -Force
+}
+
 Import-Module -Name PSWritePDF
 Add-Type -AssemblyName PresentationFramework
 [void][System.Reflection.Assembly]::LoadWithPartialName("System.Windows.forms")
 
-# XAML 정의
-[xml]$xaml = @"
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        Title="PDF Merger" Height="400" Width="500">
-    <DockPanel>
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="5">
-            <Button Name="DeleteButton" Height="30" Width="40" Margin="0,0,5,0">Del</Button>
-            <Button Name="MergeButton" Height="30" Width="80">Merge</Button>
-        </StackPanel>
-
-        <ListBox Name="FileList" AllowDrop="True" Margin="5"
-                 Background="#f8f8f8" BorderBrush="#ccc" BorderThickness="1">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <DockPanel>
-                        <!-- 인덱스 번호 표시 -->
-                        <TextBlock Text="{Binding Index}" Width="25" 
-                                   HorizontalAlignment="Left" Padding="4" 
-                                   Foreground="#666" FontWeight="Bold"/>
-
-                        <TextBlock Text="{Binding Name}" Padding="4,4,0,4" 
-                                   VerticalAlignment="Center"/>
-
-                        <Separator Margin="0,2,0,2" DockPanel.Dock="Bottom"/>
-                    </DockPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-    </DockPanel>
-</Window>
-"@
-
-# XAML 로드
-$reader = (New-Object System.Xml.XmlNodeReader $xaml)
+# XAML 로드 (외부 파일)
+$xamlPath = Join-Path -Path $PSScriptRoot -ChildPath "ui\MergePDF.xaml"
+# 파일을 원문으로 읽고 XML로 파싱 (인코딩 문제 방지)
+$xamlString = [System.IO.File]::ReadAllText($xamlPath)
+[xml]$xamlXml = $xamlString
+$reader = New-Object System.Xml.XmlNodeReader $xamlXml
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
 # 창 위치
@@ -118,7 +108,7 @@ $mergeBtn.Add_Click({
         if ($saveFileDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             $outputPath = $saveFileDialog.FileName
             try {
-                Merge-PDF -InputFile $ordered -OutputFile $outputPath
+                Merge-PDF -InputFile $ordered -OutputFile $outputPath -IgnoreProtection -WarningAction SilentlyContinue
                 [System.Windows.MessageBox]::Show("PDFs merged successfully to `n$outputPath", "Success", 'OK', 'Information')
             } catch {
                 [System.Windows.MessageBox]::Show("Error merging PDFs: $_", "Error", 'OK', 'Error')
