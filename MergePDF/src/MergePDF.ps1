@@ -1,3 +1,10 @@
+# 관리자 권한 확인
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    .\SettingModules.ps1
+    Import-Module AdminPrivilege
+    Set-Admin
+}
+
 # PSWritePDF 모듈 확인 및 설치
 if (-not (Get-Module -ListAvailable -Name PSWritePDF)) {
     Write-Host "PSWritePDF module is not installed. Installing..." -ForegroundColor Yellow
