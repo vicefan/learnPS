@@ -1,3 +1,5 @@
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 # Get PSWritePDF module
 if (-not (Get-Module -ListAvailable -Name PSWritePDF)) {
     Write-Host "PSWritePDF module is not installed. Installing..." -ForegroundColor Yellow
