@@ -1,4 +1,7 @@
 @echo off
+rem --- 관리자 권한 확인 및 승격 (없으면 UAC로 현재 배치 다시 실행) ---
+powershell -NoProfile -Command "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','\"%~f0\" %*' -Verb RunAs; exit 0 }"
+
 set "REPO=learnPS"
 set "BRANCH=main"
 set "SUBDIR=MergePDF"
