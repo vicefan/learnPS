@@ -32,7 +32,10 @@ REM --> If error flag set, we do not have admin.
  :--------------------------------------
 
 rem 파워셸 스크립트 실행 권한 설정
-powershell -NoProfile -Command "Set-ExecutionPolicy RemoteSigned"
+if not defined __PSExecutionPolicySet (
+  set __PSExecutionPolicySet=1
+  call :SetPSExecutionPolicy
+)
 
 rem 1) ZIP 다운로드 및 서브폴더 추출
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
@@ -49,6 +52,6 @@ if errorlevel 1 (
 
 rem 2) GUI 스크립트 숨김으로 실행 (새로운 PowerShell 프로세스, 콘솔 창 없음)
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "Start-Process -FilePath 'powershell' -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File ""C:\tmp\MergePDF\src\MergePDF.ps1""' -WindowStyle Hidden"
+  "Start-Process -FilePath 'powershell' -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File ""%TARGET%\MergePDF.ps1""' -WindowStyle Hidden"
 
 exit /b 0

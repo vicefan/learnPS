@@ -1,4 +1,4 @@
-# PSWritePDF 모듈 확인 및 설치
+# Get PSWritePDF module
 if (-not (Get-Module -ListAvailable -Name PSWritePDF)) {
     Write-Host "PSWritePDF module is not installed. Installing..." -ForegroundColor Yellow
     Install-Module -Name PSWritePDF -Scope CurrentUser -Force
@@ -8,20 +8,20 @@ Import-Module -Name PSWritePDF
 Add-Type -AssemblyName PresentationFramework
 [void][System.Reflection.Assembly]::LoadWithPartialName("System.Windows.forms")
 
-# XAML 로드 (외부 파일)
+# load XAML
 $xamlPath = Join-Path -Path $PSScriptRoot -ChildPath "ui\MergePDF.xaml"
 if (-not (Test-Path $xamlPath)) {
-    Write-Host "XAML 파일을 찾을 수 없습니다: $xamlPath"
+    Write-Host "XAML file not found: $xamlPath"
     return
 }
-# 원문을 UTF8로 읽고 안전하게 XmlReader로 파싱
+# Parse XAML
 $xamlString = [System.IO.File]::ReadAllText($xamlPath, [System.Text.Encoding]::UTF8)
 $sr = New-Object System.IO.StringReader($xamlString)
 $xmlReader = [System.Xml.XmlReader]::Create($sr)
 try {
     $window = [Windows.Markup.XamlReader]::Load($xmlReader)
 } catch {
-    Write-Host "XAML 로드 실패: $_"
+    Write-Host "Failed to load XAML: $_"
     return
 } finally {
     $xmlReader.Close()
@@ -29,20 +29,20 @@ try {
 }
 
 if (-not $window) {
-    Write-Host "Window 객체 생성 실패"
+    Write-Host "Failed to create Window object."
     return
 }
 
-# 컨트롤 가져오기 (존재 여부 검사)
+# Get Ctrls
 $fileList = $window.FindName("FileList")
 $mergeBtn = $window.FindName("MergeButton")
 $deleteBtn = $window.FindName("DeleteButton")
 
-if (-not $fileList) { Write-Host "XAML에 FileList라는 Name을 가진 컨트롤이 없습니다."; return }
-if (-not $mergeBtn) { Write-Host "XAML에 MergeButton이라는 컨트롤이 없습니다."; return }
-if (-not $deleteBtn) { Write-Host "XAML에 DeleteButton이라는 컨트롤이 없습니다."; return }
+if (-not $fileList) { Write-Host "No FileList control found in XAML."; return }
+if (-not $mergeBtn) { Write-Host "No MergeButton control found in XAML."; return }
+if (-not $deleteBtn) { Write-Host "No DeleteButton control found in XAML."; return }
 
-# --- 인덱스 갱신 함수 ---
+# --- Update-Idx ---
 function Update-Indexes {
     $i = 1
     foreach ($item in $fileList.Items) {
@@ -52,7 +52,7 @@ function Update-Indexes {
     $fileList.Items.Refresh()
 }
 
-# --- Drag 순서 변경 ---
+# --- Change ---
 $draggedItem = $null
 $fileList.Add_PreviewMouseLeftButtonDown({
     $draggedItem = $_.OriginalSource.DataContext
@@ -73,7 +73,7 @@ $fileList.Add_Drop({
     }
 })
 
-# --- 파일 Drag & Drop 추가 ---
+# --- Add Drag&Drop ---
 $fileList.Add_Drop({
     param($sender, $e)
     if ($e.Data.GetDataPresent([Windows.DataFormats]::FileDrop)) {
@@ -91,7 +91,7 @@ $fileList.Add_Drop({
     }
 })
 
-# --- 삭제 버튼 ---
+# --- Delete ---
 $deleteBtn.Add_Click({
     $sel = $fileList.SelectedItem
     if ($sel) {
@@ -100,7 +100,7 @@ $deleteBtn.Add_Click({
     }
 })
 
-# --- 병합 버튼 ---
+# --- Merge ---
 $mergeBtn.Add_Click({
     $ordered = @()
     foreach ($item in $fileList.Items) {
@@ -125,5 +125,5 @@ $mergeBtn.Add_Click({
     }
 })
 
-# --- 실행 ---
+# --- Execute ---
 $window.ShowDialog() | Out-Null
